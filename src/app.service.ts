@@ -1,42 +1,51 @@
 import { Injectable } from '@nestjs/common';
-import { client } from 'websocket';
+import * as dotenv from 'dotenv';
+import TwitchJs, { Chat } from 'twitch-js';
+import axios from 'axios';
+
+dotenv.config();
+
+interface responseType {
+  access_token?: string,
+  refresh_token?: string,
+}
 
 @Injectable()
 export class AppService {
-  getHello(): string {
-    return 'Hello World!';
+  private clientId: string;
+  private token: string;
+  private secret: string;
+  private refreshToken: string;
+  private twitchUrl: string;
+
+  constructor() {
+    this.clientId = process.env.CLIENT;
+    this.token = process.env.TOKEN;
+    this.secret = process.env.SECRET;
+    this.refreshToken = process.env.REFRESH;
+    this.twitchUrl = 'https://id.twitch.tv/oauth2/token'
   }
 
-  getHello2(): string {
-    return "wow";
-  }
+  async startChatSession(): Promise<Chat> {
+    const onAuthenticationFailure = async () => {
+      let response = await axios.post<responseType>(this.twitchUrl, 
+        {
+          grant_type: 'refresh_token',
+          refresh_token: this.refreshToken,
+          client_id: this.clientId,
+          client_secret: this.secret,
+        },
+      )
+      return response.data.access_token;
+    }
+  
+    const { chat } = new TwitchJs({ token: this.token, username: 'testravioliBot', onAuthenticationFailure: onAuthenticationFailure})
 
-  translateBot(): void {
-    const twitchclient = new client()
+    await chat.connect();
 
-    twitchclient.on("connectFailed", (error) => {
-      console.log("error: " + error.toString())
-    })
+    await chat.join('#papakimbuislove');
 
+    return chat;
 
-    twitchclient.on('connect', (connection) => {
-      console.log('WebSocket Client Connected: '+ connection);
-    })
-
-    twitchclient.connect("ws://irc-ws.chat.twitch.tv:80")
-
-    this.twitchTest(twitchclient)
-  }
-
-
-  twitchTest(twitchClient: client): void {
-    const clientId = "b4aod3budq51j66kdacw5axw0xganm"
-    const key = "kpudz7gmp0zx8xal914cxwvhxnrznp"
-
-    twitchClient.on('connect', (connection) => {
-      connection.sendUTF(`PASS oauth:${key}`);
-
-      connection.sendUTF('JOIN #rravioliii');
-    })
   }
 }
