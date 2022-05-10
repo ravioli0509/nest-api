@@ -3,5 +3,5 @@ import { TranslationService } from './translation.service';
 
 @Controller()
 export class TranslationController {
-    constructor(private readonly translationService: TranslationService) {}
+  constructor(private readonly translationService: TranslationService) {}
 }
