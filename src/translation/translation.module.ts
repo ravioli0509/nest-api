@@ -3,8 +3,8 @@ import { TranslationController } from './translation.controller';
 import { TranslationService } from "./translation.service";
 
 @Module({
-    controllers: [TranslationController],
-    providers: [TranslationService],
+	controllers: [TranslationController],
+	providers: [TranslationService],
 })
 
 export class TranslationModule {}

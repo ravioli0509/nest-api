@@ -98,8 +98,66 @@ export class TranslationService {
 	}
 
 	async translateUsingDeepL(messageText: string, targetLang: string): Promise<string> {
-		const multiple = this.checkMultiple(messageText);
+		const multiple = this.checkMultiple(targetLang);
 
+		console.log(multiple)
+
+		if (multiple) {
+			// try {
+			// 	const response1 = axios.get(
+			// 		`${this.deepLUrl}/translate`,
+			// 		{
+			// 			params: {
+			// 				text: messageText,
+			// 				target_lang: targetLang.split(",")[0],
+			// 				auth_key: this.deepLAuth
+			// 			},
+			// 		});
+			// 	const response2 = axios.get(
+			// 		`${this.deepLUrl}`,
+			// 		{
+			// 			params: {
+			// 				text: messageText,
+			// 				target_lang: targetLang.split(",")[1],
+			// 				auth_key: this.deepLAuth
+			// 			},
+			// 		});
+
+
+			// 	const allRep = await Promise.all([response1, response2])
+
+			// 	console.log(allRep[0].data)
+			// } catch(e) {
+			// 	this.logError(e);
+			// }
+
+			// const firstM = allRep[0].data.data.translations[0].translatedText
+			// const secondM = allRep[1].data.data.translations[0].translatedText
+
+			// return `EN: ${firstM}, JA: ${secondM}`
+
+		} else {
+			// try {
+			// 	const response = await axios.get(
+			// 		`${this.deepLUrl}/translate`,
+			// 		{
+			// 			params: {
+			// 				text: messageText,
+			// 				target_lang: targetLang,
+			// 				auth_key: this.deepLAuth
+			// 			},
+			// 		});
+
+			// 		console.log(response.data)
+					
+			// 	// const message = response.data.data.translations[0].translatedText;
+				
+			// 	// return `${targetLang.toUpperCase}: ${message}`;
+			// } catch (e) {
+			// 	console.log(e);
+			// 	this.logError(e);
+			// }
+		}
 
 		return "";
 	}
@@ -107,7 +165,6 @@ export class TranslationService {
 	async translateMessage(chatSession: Chat): Promise<void> {
 		let langList: string[] = await this.getDeepLAvailableLang();
 		let translatedMessage: string;
-
 		chatSession.on(Commands.PRIVATE_MESSAGE, async (message) => {
 			if (message.isSelf) return;
 
@@ -120,7 +177,7 @@ export class TranslationService {
 				const response = await axios.post<GoogleTranslationDetect>(
 					`${this.googleUrl}/detect`, {timeout: 2000}, 
 					{ 
-						params:　{
+						params:{
 							q: messageText,
 							key: this.googleAPIKey
 						},
