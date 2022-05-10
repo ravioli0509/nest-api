@@ -21,9 +21,6 @@ export class TranslationService {
 		this.googleUrl = "https://translation.googleapis.com/language/translate/v2"
   }
 
-	logError(e: any) {
-		console.log(e.data?.response)
-	}
 
 	async getDeepLAvailableLang(): Promise<string[]> {
 		try {
@@ -46,120 +43,93 @@ export class TranslationService {
 	}
 
 	async translateUsingGoogle(messageText: string, targetLang: string): Promise<string> {
-		const multiple = this.checkMultiple(messageText);
-
-		if (multiple) {
-			const response1 = axios.post(
+		try {
+			const response1 = await axios.post(
 				`${this.googleUrl}`, {timeout: 2000},
 				{
 					params: {
 						q: messageText,
-						target: targetLang.split(",")[0],
+						target: "EN",
 						key: this.googleAPIKey
 					},
 				});
-			const response2 = axios.post(
+
+			const response2 = await axios.post(
 				`${this.googleUrl}`, {timeout: 2000},
 				{
 					params: {
 						q: messageText,
-						target: targetLang.split(",")[1],
+						target: "JA",
 						key: this.googleAPIKey
 					},
 				});
 
 
-			const allRep = await Promise.all([response1, response2])
 
-			const firstM = allRep[0].data.data.translations[0].translatedText
-			const secondM = allRep[1].data.data.translations[0].translatedText
+			// console.log(response1.data, response2.data, "HI!!!1")
 
-			return `EN: ${firstM}, JA: ${secondM}`
+			const firstM = response1.data.data.translations[0].translatedText
+			const secondM = response2.data.data.translations[0].translatedText
 
-		} else {
-			try {
-				const response = await axios.post(
-					`${this.googleUrl}`, {timeout: 2000},
-					{
-						params: {
-							q: messageText,
-							target: targetLang,
-							key: this.googleAPIKey
-						},
-					});
-					
-				const message = response.data.data.translations[0].translatedText;
-				
-				return `${targetLang.toUpperCase}: ${message}`;
-			} catch (e) {
-				this.logError(e);
-			}
+			return `en: ${firstM}, ja: ${secondM}`
+		} catch (e) {
+			console.log(e);
 		}
+		
 	}
 
 	async translateUsingDeepL(messageText: string, targetLang: string): Promise<string> {
 		const multiple = this.checkMultiple(targetLang);
 
-		console.log(multiple)
-
 		if (multiple) {
-			// try {
-			// 	const response1 = axios.get(
-			// 		`${this.deepLUrl}/translate`,
-			// 		{
-			// 			params: {
-			// 				text: messageText,
-			// 				target_lang: targetLang.split(",")[0],
-			// 				auth_key: this.deepLAuth
-			// 			},
-			// 		});
-			// 	const response2 = axios.get(
-			// 		`${this.deepLUrl}`,
-			// 		{
-			// 			params: {
-			// 				text: messageText,
-			// 				target_lang: targetLang.split(",")[1],
-			// 				auth_key: this.deepLAuth
-			// 			},
-			// 		});
+			try {
+				const response1 = await axios.get(
+					`${this.deepLUrl}/translate`,
+					{
+						params: {
+							text: messageText,
+							target_lang: targetLang.split(",")[0],
+							auth_key: this.deepLAuth
+						},
+					});
+				const response2 = await axios.get(
+					`${this.deepLUrl}/translate`,
+					{
+						params: {
+							text: messageText,
+							target_lang: targetLang.split(",")[1],
+							auth_key: this.deepLAuth
+						},
+					});
 
+				const firstM = response1.data.translations[0].text
+				const secondM = response2.data.translations[0].text
+	
+				return `EN: ${firstM}, JA: ${secondM}`
 
-			// 	const allRep = await Promise.all([response1, response2])
-
-			// 	console.log(allRep[0].data)
-			// } catch(e) {
-			// 	this.logError(e);
-			// }
-
-			// const firstM = allRep[0].data.data.translations[0].translatedText
-			// const secondM = allRep[1].data.data.translations[0].translatedText
-
-			// return `EN: ${firstM}, JA: ${secondM}`
+			} catch(e) {
+				console.log(e);
+			}
 
 		} else {
-			// try {
-			// 	const response = await axios.get(
-			// 		`${this.deepLUrl}/translate`,
-			// 		{
-			// 			params: {
-			// 				text: messageText,
-			// 				target_lang: targetLang,
-			// 				auth_key: this.deepLAuth
-			// 			},
-			// 		});
-
-			// 		console.log(response.data)
+			try {
+				const response = await axios.get(
+					`${this.deepLUrl}/translate`,
+					{
+						params: {
+							text: messageText,
+							target_lang: targetLang,
+							auth_key: this.deepLAuth
+						},
+					});
 					
-			// 	// const message = response.data.data.translations[0].translatedText;
+				const message = response.data.translations[0].text;
 				
-			// 	// return `${targetLang.toUpperCase}: ${message}`;
-			// } catch (e) {
-			// 	console.log(e);
-			// 	this.logError(e);
-			// }
+				return `${targetLang}: ${message}`;
+			} catch (e) {
+				console.log(e);
+			}
 		}
-
-		return "";
 	}
 
 	async translateMessage(chatSession: Chat): Promise<void> {
@@ -199,13 +169,11 @@ export class TranslationService {
 					target = "en,ja"
 				}
 
-				console.log(target, langCount)
-
 				translatedMessage = langCount > 0 ? await this.translateUsingDeepL(messageText, target) : await this.translateUsingGoogle(messageText, target);
 			
 				
 			} catch(e) {
-				this.logError(e);
+				console.log(e);
 			}
 
 	  	await chatSession.say('#papakimbuislove', name + " said, "+ translatedMessage);
