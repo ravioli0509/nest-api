@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as dotenv from 'dotenv';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import { Chat, Commands } from 'twitch-js';
 import { Constants } from '../constants'
 import { DeepLSupportedProperties, DeepLTranslationResponse, GoogleDetectResponse, GoogleTranslationResponse } from './intefaces/translation.interface';
@@ -38,13 +38,9 @@ export class TranslationService {
 		}
 	}
 
-	checkMultiple(lang: string): Boolean {
-		return lang.includes(",") ? true : false;
-	}
-
 	async translateUsingGoogle(messageText: string): Promise<string> {
 		try {
-			const response1 = await axios.post<GoogleTranslationResponse>(
+			const resEng = axios.post<GoogleTranslationResponse>(
 				`${this.googleUrl}`, null,
 				{
 					params: {
@@ -54,7 +50,7 @@ export class TranslationService {
 					},
 				});
 
-			const response2 = await axios.post<GoogleTranslationResponse>(
+			const resJap = axios.post<GoogleTranslationResponse>(
 				`${this.googleUrl}`, null,
 				{
 					params: {
@@ -64,23 +60,21 @@ export class TranslationService {
 					},
 				});
 
-
-			const firstM = response1.data.data.translations[0].translatedText;
-			const secondM = response2.data.data.translations[0].translatedText;
+			const AllRep = await Promise.all([resEng, resJap]);
+			
+			const firstM = AllRep[0].data.data.translations[0].translatedText;
+			const secondM = AllRep[1].data.data.translations[0].translatedText;
 
 			return `${Constants.ENGLISH}: ${firstM}, ${Constants.JAPANESE}: ${secondM}`;
 		} catch (e) {
 			console.log(e);
 		}
-		
 	}
 
 	async translateUsingDeepL(messageText: string, targetLang: string): Promise<string> {
-		const multiple = this.checkMultiple(targetLang);
-
-		if (multiple) {
+		if (targetLang.includes(",")) {
 			try {
-				const resEng = await axios.get<DeepLTranslationResponse>(
+				const resEng = axios.get<DeepLTranslationResponse>(
 					`${this.deepLUrl}/translate`,
 					{
 						params: {
@@ -89,7 +83,8 @@ export class TranslationService {
 							auth_key: this.deepLAuth
 						},
 					});
-				const resJp = await axios.get<DeepLTranslationResponse>(
+
+				const resJap = axios.get<DeepLTranslationResponse>(
 					`${this.deepLUrl}/translate`,
 					{
 						params: {
@@ -99,8 +94,10 @@ export class TranslationService {
 						},
 					});
 
-				const firstM = resEng.data.translations[0].text;
-				const secondM = resJp.data.translations[0].text;
+				const AllRep = await Promise.all([resEng, resJap]);
+
+				const firstM = AllRep[0].data.translations[0].text;
+				const secondM = AllRep[1].data.translations[0].text;
 	
 				return `${Constants.ENGLISH}: ${firstM}, ${Constants.JAPANESE}: ${secondM}`;
 

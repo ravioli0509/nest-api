@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import TwitchJs, { Chat } from 'twitch-js';
 import axios from 'axios';
+import { Constants } from './constants';
 
 dotenv.config();
 
@@ -27,10 +28,11 @@ export class AppService {
   }
 
   async startChatSession(): Promise<Chat> {
+
     const onAuthenticationFailure = async () => {
       let response = await axios.post<responseType>(this.twitchUrl, 
         {
-          grant_type: 'refresh_token',
+          grant_type: Constants.REFRESHTYPE,
           refresh_token: this.refreshToken,
           client_id: this.clientId,
           client_secret: this.secret,
@@ -39,13 +41,12 @@ export class AppService {
       return response.data.access_token;
     }
   
-    const { chat } = new TwitchJs({ token: this.token, username: 'testravioliBot', onAuthenticationFailure: onAuthenticationFailure})
+    const { chat } = new TwitchJs({ token: this.token, username: 'testravioliBot', onAuthenticationFailure})
 
     await chat.connect();
 
     await chat.join('#papakimbuislove');
-
+    
     return chat;
-
   }
 }
