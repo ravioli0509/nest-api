@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import * as dotenv from 'dotenv';
 import axios from 'axios';
 import { Chat, Commands } from 'twitch-js';
-import { GoogleTranslationDetect, DeepLSupportedLang } from './intefaces/translation.interface';
-import { first } from 'rxjs';
+import { Constants } from '../constants'
+import { DeepLSupportedProperties, DeepLTranslationResponse, GoogleDetectResponse, GoogleTranslationResponse } from './intefaces/translation.interface';
 
 dotenv.config();
 
@@ -24,17 +24,17 @@ export class TranslationService {
 
 	async getDeepLAvailableLang(): Promise<string[]> {
 		try {
-			const response = await axios.get<DeepLSupportedLang[]>(
+			const response = await axios.get<DeepLSupportedProperties[]>(
 				`${this.deepLUrl}/languages`, 
 				{
 					params: {
 						auth_key: this.deepLAuth,
-						type: "target"
+						type: Constants.TARGETTYPE
 					}
 				})
 			return response.data.map(item => item.language)
 		} catch (e) {
-			this.logError(e);
+			console.log(e);
 		}
 	}
 
@@ -42,36 +42,33 @@ export class TranslationService {
 		return lang.includes(",") ? true : false;
 	}
 
-	async translateUsingGoogle(messageText: string, targetLang: string): Promise<string> {
+	async translateUsingGoogle(messageText: string): Promise<string> {
 		try {
-			const response1 = await axios.post(
-				`${this.googleUrl}`, {timeout: 2000},
+			const response1 = await axios.post<GoogleTranslationResponse>(
+				`${this.googleUrl}`, null,
 				{
 					params: {
 						q: messageText,
-						target: "EN",
+						target: Constants.ENGLISH,
 						key: this.googleAPIKey
 					},
 				});
 
-			const response2 = await axios.post(
-				`${this.googleUrl}`, {timeout: 2000},
+			const response2 = await axios.post<GoogleTranslationResponse>(
+				`${this.googleUrl}`, null,
 				{
 					params: {
 						q: messageText,
-						target: "JA",
+						target: Constants.JAPANESE,
 						key: this.googleAPIKey
 					},
 				});
 
 
+			const firstM = response1.data.data.translations[0].translatedText;
+			const secondM = response2.data.data.translations[0].translatedText;
 
-			// console.log(response1.data, response2.data, "HI!!!1")
-
-			const firstM = response1.data.data.translations[0].translatedText
-			const secondM = response2.data.data.translations[0].translatedText
-
-			return `en: ${firstM}, ja: ${secondM}`
+			return `${Constants.ENGLISH}: ${firstM}, ${Constants.JAPANESE}: ${secondM}`;
 		} catch (e) {
 			console.log(e);
 		}
@@ -83,29 +80,29 @@ export class TranslationService {
 
 		if (multiple) {
 			try {
-				const response1 = await axios.get(
+				const resEng = await axios.get<DeepLTranslationResponse>(
 					`${this.deepLUrl}/translate`,
 					{
 						params: {
 							text: messageText,
-							target_lang: targetLang.split(",")[0],
+							target_lang: Constants.ENGLISH,
 							auth_key: this.deepLAuth
 						},
 					});
-				const response2 = await axios.get(
+				const resJp = await axios.get<DeepLTranslationResponse>(
 					`${this.deepLUrl}/translate`,
 					{
 						params: {
 							text: messageText,
-							target_lang: targetLang.split(",")[1],
+							target_lang: Constants.JAPANESE,
 							auth_key: this.deepLAuth
 						},
 					});
 
-				const firstM = response1.data.translations[0].text
-				const secondM = response2.data.translations[0].text
+				const firstM = resEng.data.translations[0].text;
+				const secondM = resJp.data.translations[0].text;
 	
-				return `EN: ${firstM}, JA: ${secondM}`
+				return `${Constants.ENGLISH}: ${firstM}, ${Constants.JAPANESE}: ${secondM}`;
 
 			} catch(e) {
 				console.log(e);
@@ -113,7 +110,7 @@ export class TranslationService {
 
 		} else {
 			try {
-				const response = await axios.get(
+				const response = await axios.get<DeepLTranslationResponse>(
 					`${this.deepLUrl}/translate`,
 					{
 						params: {
@@ -135,6 +132,7 @@ export class TranslationService {
 	async translateMessage(chatSession: Chat): Promise<void> {
 		let langList: string[] = await this.getDeepLAvailableLang();
 		let translatedMessage: string;
+
 		chatSession.on(Commands.PRIVATE_MESSAGE, async (message) => {
 			if (message.isSelf) return;
 
@@ -144,8 +142,8 @@ export class TranslationService {
 			const messageText: string = message.message;
 
 			try {
-				const response = await axios.post<GoogleTranslationDetect>(
-					`${this.googleUrl}/detect`, {timeout: 2000}, 
+				const response = await axios.post<GoogleDetectResponse>(
+					`${this.googleUrl}/detect`, {timeout: Constants.TIMEOUT}, 
 					{ 
 						params:{
 							q: messageText,
@@ -161,22 +159,25 @@ export class TranslationService {
 					}
 				});
 
-				if (langDetected == "EN") {
-					target = "ja"
-				} else if (langDetected == "JA") {
-					target = "en"
+				if (langDetected == Constants.ENGLISH) {
+					target = Constants.JAPANESE;
+				} else if (langDetected == Constants.JAPANESE) {
+					target = Constants.ENGLISH;
 				} else {
-					target = "en,ja"
+					target = Constants.ENGJAP;
 				}
 
-				translatedMessage = langCount > 0 ? await this.translateUsingDeepL(messageText, target) : await this.translateUsingGoogle(messageText, target);
+				setTimeout(translatedMessage = langCount > 0 ? await this.translateUsingDeepL(messageText, target) : await this.translateUsingGoogle(messageText), Constants.TIMEOUT);		
 			
-				
 			} catch(e) {
 				console.log(e);
 			}
 
-	  	await chatSession.say('#papakimbuislove', name + " said, "+ translatedMessage);
+			if (translatedMessage == undefined) {
+				await chatSession.say('#papakimbuislove', "Sorry translation bot is currenty down...");
+			} else {
+				await chatSession.say('#papakimbuislove', name + " said, "+ translatedMessage);
+			}
 		}) 
 	}
 }
