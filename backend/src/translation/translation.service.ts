@@ -21,7 +21,6 @@ export class TranslationService {
 		this.googleUrl = "https://translation.googleapis.com/language/translate/v2"
   }
 
-
 	async getDeepLAvailableLang(): Promise<string[]> {
 		try {
 			const response = await axios.get<DeepLSupportedProperties[]>(
@@ -130,6 +129,7 @@ export class TranslationService {
 		let langList: string[] = await this.getDeepLAvailableLang();
 		let translatedMessage: string;
 
+
 		chatSession.on(Commands.PRIVATE_MESSAGE, async (message) => {
 			if (message.isSelf) return;
 
@@ -171,9 +171,9 @@ export class TranslationService {
 			}
 
 			if (translatedMessage == undefined) {
-				await chatSession.say('#papakimbuislove', "Sorry translation bot is currenty down...");
+				await chatSession.say('#rravioliii', "Sorry translation bot is currenty down..., 翻訳機が落ちてます。すみません。");
 			} else {
-				await chatSession.say('#papakimbuislove', name + " said, "+ translatedMessage);
+				await chatSession.say('#rravioliii', name + " said, "+ translatedMessage);
 			}
 		}) 
 	}

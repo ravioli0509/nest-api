@@ -67,7 +67,7 @@ let AppService = class AppService {
         };
         const { chat } = new twitch_js_1.default({ token: this.token, username: 'testravioliBot', onAuthenticationFailure });
         await chat.connect();
-        await chat.join('#papakimbuislove');
+        await chat.join('#rravioliii');
         return chat;
     }
 };

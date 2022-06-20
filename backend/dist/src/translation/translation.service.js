@@ -173,10 +173,10 @@ let TranslationService = class TranslationService {
                 console.log(e);
             }
             if (translatedMessage == undefined) {
-                await chatSession.say('#papakimbuislove', "Sorry translation bot is currenty down...");
+                await chatSession.say('#rravioliii', "Sorry translation bot is currenty down..., 翻訳機が落ちてます。すみません。");
             }
             else {
-                await chatSession.say('#papakimbuislove', name + " said, " + translatedMessage);
+                await chatSession.say('#rravioliii', name + " said, " + translatedMessage);
             }
         });
     }

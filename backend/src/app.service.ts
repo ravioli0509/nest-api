@@ -30,22 +30,26 @@ export class AppService {
   async startChatSession(): Promise<Chat> {
 
     const onAuthenticationFailure = async () => {
-      let response = await axios.post<responseType>(this.twitchUrl, 
-        {
-          grant_type: Constants.REFRESHTYPE,
-          refresh_token: this.refreshToken,
-          client_id: this.clientId,
-          client_secret: this.secret,
-        },
-      )
-      return response.data.access_token;
+      try {
+        let response = await axios.post<responseType>(this.twitchUrl, 
+          {
+            grant_type: Constants.REFRESHTYPE,
+            refresh_token: this.refreshToken,
+            client_id: this.clientId,
+            client_secret: this.secret,
+          },
+        )
+        return response.data.access_token;
+      } catch (e) {
+        console.log(e);
+      }
     }
   
     const { chat } = new TwitchJs({ token: this.token, username: 'testravioliBot', onAuthenticationFailure})
 
     await chat.connect();
 
-    await chat.join('#papakimbuislove');
+    await chat.join('#rravioliii');
     
     return chat;
   }

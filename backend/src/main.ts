@@ -28,4 +28,3 @@ app.on('ready', () => {
     mainWindow = null
   })
 })
-// const App = Electron.app;
