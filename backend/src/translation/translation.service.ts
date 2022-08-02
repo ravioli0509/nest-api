@@ -3,7 +3,7 @@ import * as dotenv from 'dotenv';
 import axios, { AxiosError } from 'axios';
 import { Chat, Commands } from 'twitch-js';
 import { Constants } from '../constants'
-import { DeepLSupportedProperties, DeepLTranslationResponse, GoogleDetectResponse, GoogleTranslationResponse } from './intefaces/translation.interface';
+import { DeepLSupportedProperties, DeepLTranslationResponse, GoogleDetectResponse, GoogleTranslationResponse } from './interfaces/translation.interface';
 
 dotenv.config();
 
